@@ -1,8 +1,7 @@
 import { NB, roadCenter, type City } from '../world/city';
 import { angleWrap, clamp } from '../engine/math';
-import { carLength, carMesh, type CarType } from './models';
-import type { GPUMesh, Renderer } from '../engine/renderer';
-import { Xform } from '../engine/math';
+import { carLength, carObject, type CarType } from './models';
+import type { Renderer } from '../engine/renderer';
 
 export const LANE = 3.4;
 
@@ -70,7 +69,8 @@ export class Vehicle {
   type: CarType;
   color: string;
   name: string;
-  mesh: GPUMesh;
+  obj: any;
+  private wheelSpin = 0;
   x: number; z: number; yaw: number;
   speed = 0;
   steer = 0;
@@ -83,11 +83,11 @@ export class Vehicle {
   health = 100;
   hornUntil = 0;
   lastCrash = 0;
-  private X = new Xform();
 
   constructor(r: Renderer, id: string, type: CarType, color: string, x: number, z: number, yaw: number, owner: string, name?: string) {
     this.id = id; this.type = type; this.color = color; this.x = x; this.z = z; this.yaw = yaw; this.owner = owner;
-    this.mesh = carMesh(r, type, color);
+    this.obj = carObject(type, color);
+    r.scene.add(this.obj);
     this.length = carLength(type);
     this.name = name ?? ({ hatch: 'hatchback', sedan: 'sedan', pickup: 'pickup', taxi: 'taxi', police: 'police cruiser', van: 'van' }[type]);
   }
@@ -146,12 +146,15 @@ export class Vehicle {
     return impact;
   }
 
-  draw(r: Renderer, t: number) {
-    this.X.reset().translate(this.x, 0.12 + (this.type === 'van' ? 0.05 : 0), this.z).rotY(this.yaw);
-    // slight body roll
-    this.X.rotZ(-this.steer * Math.min(Math.abs(this.speed) / 25, 1) * 0.08);
-    r.draw(this.mesh, this.X.m, null, true);
-    void t;
+  /** Sync the 3D model with the simulation state. */
+  draw(dt: number, visible: boolean) {
+    this.obj.visible = visible;
+    if (!visible) return;
+    this.obj.position.set(this.x, 0, this.z);
+    this.obj.rotation.set(0, this.yaw, -this.steer * Math.min(Math.abs(this.speed) / 25, 1) * 0.06, 'YXZ');
+    this.wheelSpin += (this.speed / 0.33) * dt;
+    const ws = this.obj.userData.wheels as any[];
+    for (let i = 0; i < ws.length; i++) { ws[i].rotation.x = this.wheelSpin; ws[i].rotation.y = ws[i].position.z > 0 ? this.steer * 0.8 : 0; ws[i].rotation.order = 'YXZ'; }
   }
 
   /** Point beside the driver door for exiting (sidewalk side preference handled by caller). */

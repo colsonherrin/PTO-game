@@ -1,6 +1,6 @@
-// Bundles the game into a single self-contained dist/index.html (no runtime deps, works offline).
+// Bundles the game (including three.js) into dist/index.html and copies models/textures to dist/assets.
 import * as esbuild from 'esbuild';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, cpSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -19,6 +19,7 @@ async function build() {
   const html = readFileSync(join(root, 'index.html'), 'utf8')
     .replace('<script type="module" src="./src/main.ts"></script>', () => `<script>${js}</script>`);
   writeFileSync(join(root, 'dist/index.html'), html);
+  cpSync(join(root, 'public/assets'), join(root, 'dist/assets'), { recursive: true });
   console.log(`[build] dist/index.html ${(html.length / 1024).toFixed(0)} KB in ${Date.now() - t0} ms`);
 }
 

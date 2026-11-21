@@ -19,7 +19,9 @@ page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 const ev = (fn, arg) => page.evaluate(fn, arg);
 const wait = (ms) => page.waitForTimeout(ms);
-const shot = (n) => page.screenshot({ path: `screenshots/${n}.png` });
+// Logic checks run at low quality so software rendering keeps up; README screenshots are taken separately.
+const shot = (n) => page.screenshot({ path: `screenshots/e2e-${n}.png`, timeout: 180000 }).catch(() => {});
+const lowQ = () => ev(() => { const r = window.pto.r; r.setQuality('low'); r.shadowsEnabled = false; r.resolutionScale = 0.5; localStorage.setItem('pto:quality', JSON.stringify('low')); localStorage.setItem('pto:shadows', 'false'); localStorage.setItem('pto:res', '0.5'); });
 const until = async (fn, arg, ms = 20000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await ev(fn, arg)) return true; await wait(250); } return false; };
 const send = async (text) => { await page.fill('#dlg-input', text); await page.press('#dlg-input', 'Enter'); await until(() => !document.querySelector('#dlg-input').disabled, null, 15000); await wait(150); };
 const lastNpcMsg = () => ev(() => [...document.querySelectorAll('#dlg-log .msg.npc span')].pop()?.textContent ?? '');
@@ -32,7 +34,8 @@ try {
   await page.goto(`http://localhost:${PORT}/`);
   await page.evaluate(() => indexedDB.deleteDatabase('pto-save'));
   await page.reload();
-  check('game boots (WebGL2 + world build)', await until(() => !!window.pto && document.getElementById('loading').style.display === 'none'));
+  check('game boots (WebGL2 + world build)', await until(() => !!window.pto && document.getElementById("loading").style.display === "none", null, 120000));
+  await lowQ();
   await wait(1200);
   await shot('01-title');
   await ev(() => document.getElementById('btn-new').click());
@@ -136,7 +139,7 @@ try {
   await ev(() => window.pto.saveGame(true));
   const snapshot = await ev(() => ({ money: window.pto.player.money, rosaRel: window.pto.npcById.get('rosa').relationship, mem: window.pto.npcById.get('rosa').memories.length }));
   await page.reload();
-  await until(() => !!window.pto && document.getElementById('btn-continue').style.display !== 'none', null, 20000);
+  await until(() => !!window.pto && document.getElementById('btn-continue').style.display !== 'none', null, 150000);
   await ev(() => document.getElementById('btn-continue').click());
   await wait(1500);
   const restored = await ev(() => ({ money: window.pto.player.money, rosaRel: window.pto.npcById.get('rosa').relationship, mem: window.pto.npcById.get('rosa').memories.length, name: window.pto.npcById.get('rosa').knowsPlayerAs, jobs: window.pto.jobs.length }));

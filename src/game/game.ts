@@ -2,7 +2,8 @@ import { Renderer } from '../engine/renderer';
 import { City, CITY, BEACH_X0, roadCenter, NB, type POIWithNodes } from '../world/city';
 import { lightingAt } from '../world/sky';
 import { rng, clamp, type Vec3, angleWrap } from '../engine/math';
-import { initModels, drawCharacter } from './models';
+import { AvatarLibrary, avatarFor, type CharacterView } from './characters';
+import { OCEAN_X } from '../world/city';
 import { Input, Player, OrbitCamera } from './player';
 import { Vehicle, interNeighbors, type Inter } from './vehicle';
 import { NPC, type NPCSave } from '../npc/npc';
@@ -56,6 +57,9 @@ export class Game {
   private lastLoc = '';
   private stepAt = 0;
   private lastBarkFor = new Map<string, number>();
+  avatars = new AvatarLibrary();
+  private views = new Map<string, CharacterView>();
+  private lastRender = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -68,9 +72,8 @@ export class Game {
   async init() {
     this.ui.setLoading('Building Palmetto Heights…');
     await new Promise((r) => setTimeout(r, 20));
-    const meshes = this.city.build();
-    for (const m of meshes) this.r.addStatic(this.r.upload(m));
-    initModels(this.r);
+    this.r.addStatic(this.city.build(), OCEAN_X);
+    await this.avatars.load((d, t) => this.ui.setLoading(`Waking up the residents… ${Math.round((d / t) * 100)}%`));
     this.spawnNPCs();
     this.spawnVehicles();
     this.applySettings();
@@ -186,6 +189,7 @@ export class Game {
   applySettings() {
     this.r.shadowsEnabled = settingsStore.get('shadows', true);
     this.r.resolutionScale = settingsStore.get('res', 1);
+    this.r.setQuality(settingsStore.get('quality', 'high'));
     this.audio.setVolume(settingsStore.get('vol', 0.6));
     this.cam.sensitivity = settingsStore.get('sens', 1);
     this.timeScale = settingsStore.get('timescale', 1);
@@ -204,6 +208,7 @@ export class Game {
       sel('set-tts').checked = this.ui.tts;
       sel('set-shadows').checked = this.r.shadowsEnabled;
       sel('set-res').value = String(this.r.resolutionScale);
+      sel('set-quality').value = this.r.quality;
       sel('set-vol').value = String(this.audio.volume);
       sel('set-sens').value = String(this.cam.sensitivity);
       sel('set-timescale').value = String(this.timeScale);
@@ -234,6 +239,7 @@ export class Game {
     live('set-tts', 'tts', (e) => e.checked);
     live('set-shadows', 'shadows', (e) => e.checked);
     live('set-res', 'res', (e) => parseFloat(e.value));
+    live('set-quality', 'quality', (e) => e.value);
     live('set-vol', 'vol', (e) => parseFloat(e.value));
     live('set-sens', 'sens', (e) => parseFloat(e.value));
     live('set-timescale', 'timescale', (e) => parseFloat(e.value));
@@ -292,6 +298,8 @@ export class Game {
     const n = Math.ceil(seconds / step);
     for (let i = 0; i < n; i++) { if (!this.paused) this.update(step); this.input.pressed.clear(); this.input.mouseDX = this.input.mouseDY = 0; }
   }
+
+  titleShowing() { return $('#title').style.display === 'flex'; }
 
   idleCamera(dt: number) {
     if ($('#title').style.display === 'flex') {
@@ -871,24 +879,32 @@ export class Game {
     r.resize();
     const L = lightingAt(this.minutes, this.t);
     // fog distance tightens slightly at night
-    r.fogFar = 260 - L.night * 60;
-    r.setCamera(this.cam.eye, this.cam.look, 1.05);
+    r.fogFar = 420 - L.night * 120;
+    r.setCamera(this.cam.eye, this.cam.look, 1.0);
     // point lights at night: nearest lamps
     if (L.night > 0.15) {
       const c = this.cam.look;
       const lamps = this.city.lamps.map((l) => ({ l, d: (l[0] - c[0]) ** 2 + (l[2] - c[2]) ** 2 })).sort((a, b) => a.d - b.d).slice(0, 8);
-      L.pointLights = lamps.map(({ l }) => ({ pos: l, color: [1.0 * L.night, 0.78 * L.night, 0.5 * L.night] as Vec3 }));
+      L.pointLights = lamps.slice(0, 6).map(({ l }) => ({ pos: l, color: [1.0, 0.78, 0.5] as Vec3 }));
     }
     const p = this.player;
     const cx = this.cam.look[0], cz = this.cam.look[2];
-    for (const v of this.vehicles) if (Math.abs(v.x - cx) < 200 && Math.abs(v.z - cz) < 200) v.draw(r, this.t);
+    const now = performance.now();
+    const rdt = Math.min(0.1, (now - (this.lastRender || now)) / 1000) * (this.paused && !this.titleShowing() ? 0 : 1);
+    this.lastRender = now;
+    for (const v of this.vehicles) v.draw(rdt, Math.abs(v.x - cx) < 260 && Math.abs(v.z - cz) < 260);
+    const view = (id: string, h: number) => {
+      let cv = this.views.get(id);
+      if (!cv) { cv = this.avatars.create(avatarFor(id), h); this.views.set(id, cv); r.scene.add(cv.root); }
+      return cv;
+    };
     for (const n of this.npcs) {
-      if (n.hidden) continue;
       const d = Math.hypot(n.x - cx, n.z - cz);
-      if (d > 110) continue;
-      drawCharacter(r, n.p.appearance, n.x, n.y, n.z, n.yaw, n.anim, n.phase, this.t + n.phase);
+      const vis = !n.hidden && d < 130;
+      if (!vis && !this.views.has(n.p.id)) continue;
+      view(n.p.id, 0.94 + n.p.appearance.height * 0.07).update(rdt, n.x, n.y, n.z, n.yaw, n.anim, n.speed || (n.anim === 'run' ? 4.5 : 1.4), vis, d < 70);
     }
-    if (!p.vehicleId && !p.passengerIn) drawCharacter(r, p.appearance, p.x, p.y, p.z, p.yaw, p.anim, p.phase, this.t);
+    view('player', 1).update(rdt, p.x, p.y, p.z, p.yaw, p.anim, p.speed, !p.vehicleId && !p.passengerIn, true);
     r.render(L, [cx, 0, cz]);
     this.frame++;
     if (!this.paused || $('#title').style.display !== 'flex') this.renderUI(L.night);

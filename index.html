@@ -185,6 +185,7 @@ table.t th{color:var(--dim);font-weight:600}
     <div class="row"><button class="btn" id="btn-apply-ai">Apply AI settings</button><span class="small" id="ai-status"></span></div>
     <h3>Graphics &amp; audio</h3>
     <div class="row"><label>Shadows</label><input type="checkbox" id="set-shadows" checked /></div>
+    <div class="row"><label>Graphics quality</label><select id="set-quality"><option value="low">Low (no post-processing)</option><option value="medium">Medium</option><option value="high" selected>High</option></select></div>
     <div class="row"><label>Resolution scale</label><select id="set-res"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1" selected>100%</option></select></div>
     <div class="row"><label>Volume</label><input type="range" id="set-vol" min="0" max="1" step="0.05" /></div>
     <div class="row"><label>Mouse sensitivity</label><input type="range" id="set-sens" min="0.3" max="2.5" step="0.1" /></div>
@@ -192,7 +193,7 @@ table.t th{color:var(--dim);font-weight:600}
     <h3>Measured AI cost</h3>
     <div id="cost-body" class="small"></div>
     <h3>Credits</h3>
-    <div class="small">PTO is open source (MIT). All geometry, textures, sounds and music are generated procedurally in code — no third-party assets. Built with TypeScript, WebGL2, Web Audio, Web Speech and esbuild. LLMs via OpenRouter.</div>
+    <div class="small">PTO is open source (MIT). Rendering: three.js (MIT). Characters and motion capture: Microsoft Rocketbox avatar library (MIT). Grass texture: OpenGameArt “dark grass” (CC-BY 3.0). Buildings, roads, vehicles, other textures and all audio are generated in code. LLMs via OpenRouter.</div>
   </div>
 </div>
 

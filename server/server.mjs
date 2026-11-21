@@ -2,7 +2,7 @@
 // OpenRouter key never reaches the browser. Usage: OPENROUTER_API_KEY=... node server/server.mjs
 import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -72,6 +72,14 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/' || url.pathname === '/index.html') {
     if (!existsSync(file)) return send(res, 500, 'Run "npm run build" first.', 'text/plain');
     return send(res, 200, readFileSync(file), 'text/html; charset=utf-8');
+  }
+  if (url.pathname.startsWith('/assets/')) {
+    const f = join(root, 'dist', normalize(url.pathname).replace(/^(\.\.[/\\])+/, ''));
+    if (f.startsWith(join(root, 'dist', 'assets')) && existsSync(f)) {
+      const type = f.endsWith('.glb') ? 'model/gltf-binary' : f.endsWith('.webp') ? 'image/webp' : 'application/octet-stream';
+      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'public, max-age=3600' });
+      return res.end(readFileSync(f));
+    }
   }
   send(res, 404, 'Not found', 'text/plain');
 });

@@ -2,9 +2,9 @@
 
 ```
 src/
-  engine/      math, mesh builder, WebGL2 renderer (shadow map, sky, fog, ACES tonemap)
+  engine/      math, mesh builder, procedural PBR textures, three.js renderer
   world/       city generation (blocks, buildings, props, POIs, colliders, nav graph), sky/time-of-day
-  game/        game loop, player + camera, vehicles + traffic AI, dialogue bridge, models, shared state
+  game/        game loop, player + camera, vehicles + traffic AI, dialogue bridge, characters, car models, shared state
   npc/         personas (16 named + procedural ambient), NPC runtime (schedule, memory, mood)
   ai/          inference router + providers, prompt builder, action schema/validator, simulated brain
   systems/     procedural audio, IndexedDB saves
@@ -16,13 +16,12 @@ scripts/       build (single-file bundle), e2e (Playwright), cost measurement
 
 ## Stack decision
 
-The brief suggested Three.js + Rapier + React + Vite. PTO instead ships a **custom ~600-line WebGL2 renderer and arcade physics in TypeScript, with zero runtime dependencies**, bundled by esbuild into one HTML file. Reasons:
-
-- The build environment had no npm registry access, so a dependency-free engine was the only way to ship *and test* a working game.
-- The visual style (flat-shaded, stylized, procedural facades) needs only boxes, cylinders, one lit/shadowed shader and a sky — a full engine adds weight without adding much here.
-- One self-contained file loads instantly, works offline, and can be hosted anywhere.
-
-The engine is isolated behind `Renderer.draw(mesh, matrix, tint)` and `City.query/raycast`, so swapping in Three.js/Babylon and Rapier later is a contained change (see roadmap).
+- **Rendering: three.js (MIT).** `src/engine/renderer.ts` owns the scene: PBR materials, PMREM image-based lighting baked from the sky dome whenever the sun moves, a 4096² soft shadow map that follows the player, the three.js `Water` object for the ocean, and an `EffectComposer` chain (MSAA render target → bloom → ACES output). Quality presets switch the chain off for weak GPUs.
+- **World geometry** is still generated in code (`MeshBuilder`), now grouped by material with world-space UVs so procedural texture sets (`src/engine/textures.ts`: asphalt, pavers, facades with lit windows, storefronts, wood, bark, foliage) tile correctly. Normal maps are derived from height canvases at load time.
+- **Characters** are skinned GLB models converted from the Microsoft Rocketbox library (`scripts/assets/convert.mjs` runs FBXLoader + GLTFExporter in headless Chrome, then re-encodes textures as WebP). `src/game/characters.ts` clones them per NPC and cross-fades motion-capture clips driven by the simulation's animation state.
+- **Vehicles** are extruded spline profiles with clear-coat paint and reflective glass (`src/game/models.ts`).
+- **Physics** stays a small arcade implementation (circle-vs-AABB), and three.js is treated as untyped at the boundary (`src/types/three.d.ts`) to keep the dependency surface to one package.
+- Bundled by esbuild into `dist/index.html`; models and two image textures live in `dist/assets/`.
 
 ## The tiered intelligence model
 

@@ -1,0 +1,89 @@
+<!doctype html><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"/three/build/three.module.js","three/addons/":"/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { TGALoader } from 'three/addons/loaders/TGALoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const b64 = (buf) => { let s = ''; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+const exportGLB = (obj, animations = []) => new Promise((res, rej) => new GLTFExporter().parse(obj, (r) => res(b64(r)), rej, { binary: true, animations, onlyVisible: false }));
+
+function shrink(tex, size, alpha) {
+  const img = tex.image; const c = document.createElement('canvas');
+  const s = Math.min(1, size / Math.max(img.width, img.height));
+  c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+  const src = document.createElement('canvas'); src.width = img.width; src.height = img.height;
+  const id = new ImageData(new Uint8ClampedArray(img.data.buffer, img.data.byteOffset, img.width * img.height * 4), img.width, img.height);
+  src.getContext('2d').putImageData(id, 0, 0);
+  const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+  // TGALoader data is stored top-down while flipY=true expects bottom-up rows; glTF wants flipY=false
+  if (tex.flipY) { g.translate(0, c.height); g.scale(1, -1); }
+  g.drawImage(src, 0, 0, c.width, c.height);
+  const t = new THREE.CanvasTexture(c); t.flipY = false; t.colorSpace = tex.colorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.userData.mimeType = 'image/png';
+  return t;
+}
+
+window.convertAvatar = async (dir, name) => {
+  const tga = new TGALoader();
+  const mgr = new THREE.LoadingManager();
+  mgr.addHandler(/\.tga$/i, tga);
+  const loader = new FBXLoader(mgr); loader.setResourcePath(`${dir}/Textures/`);
+  const obj = await loader.loadAsync(`${dir}/Export/${name}.fbx`);
+  await new Promise((r) => setTimeout(r, 300));
+  const info = { meshes: [], bones: 0 };
+  const texCache = new Map();
+  const loadT = async (file, size, srgb) => {
+    const k = file + size; if (texCache.has(k)) return texCache.get(k);
+    try { const t = await tga.loadAsync(`${dir}/Textures/${file}`); t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; const s = shrink(t, size); texCache.set(k, s); return s; } catch { texCache.set(k, null); return null; }
+  };
+  const jobs = [];
+  obj.traverse((o) => {
+    if (o.isBone) info.bones++;
+    if (!o.isMesh) return;
+    o.geometry = mergeVertices(o.geometry, 1e-4);
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    info.meshes.push({ name: o.name, skinned: !!o.isSkinnedMesh, tris: (o.geometry.index?.count ?? o.geometry.attributes.position.count) / 3, mats: mats.map((m) => `${m.name}|${m.map?.name || m.map?.image?.src || (m.map ? 'map' : '-')}`) });
+    jobs.push((async () => {
+      const out = [];
+      for (const m of mats) {
+        const n = (m.name || '').toLowerCase();
+        const prefix = window.__prefix;
+        const kind = n.includes('opacity') ? 'opacity' : n.includes('head') ? 'head' : 'body';
+        const map = await loadT(`${prefix}_${kind}_color.tga`, kind === 'body' ? 1024 : 512, true);
+        const nm = kind === 'opacity' ? null : await loadT(`${prefix}_${kind}_normal.tga`, 512, false);
+        const sm = new THREE.MeshStandardMaterial({ name: kind, map, normalMap: nm, roughness: kind === 'opacity' ? 0.6 : 0.78, metalness: 0 });
+        if (kind === 'opacity') { sm.alphaTest = 0.45; sm.side = THREE.DoubleSide; sm.transparent = false; }
+        out.push(sm);
+      }
+      o.material = out.length === 1 ? out[0] : out;
+    })());
+  });
+  await Promise.all(jobs);
+  obj.animations = [];
+  const box = new THREE.Box3().setFromObject(obj); info.box = [box.min.toArray(), box.max.toArray()];
+  info.rootRot = obj.rotation.toArray(); info.rootScale = obj.scale.toArray();
+  return { info, glb: await exportGLB(obj) };
+};
+
+window.convertAnims = async (files) => {
+  const loader = new FBXLoader();
+  let root = null; const clips = []; const info = [];
+  for (const [name, url, maxDur] of files) {
+    const obj = await loader.loadAsync(url);
+    if (!root) root = obj;
+    let clip = obj.animations[0];
+    const rootBone = clip.tracks.find((t) => /Bip01\.position$/.test(t.name))?.name ?? clip.tracks.find((t) => t.name.endsWith('.position'))?.name;
+    clip.tracks = clip.tracks.filter((t) => t.name.endsWith('.quaternion') || t.name === rootBone || /Pelvis\.position$/.test(t.name));
+    if (maxDur && clip.duration > maxDur) { clip = THREE.AnimationUtils.subclip(clip, name, 0, Math.round(maxDur * 30), 30); }
+    clip.name = name;
+    info.push({ name, dur: clip.duration, tracks: clip.tracks.length, pos: clip.tracks.filter((t) => t.name.endsWith('.position')).map((t) => t.name + ':' + Array.from(t.values.slice(0, 3)).map((v) => v.toFixed(1))), sample: clip.tracks.slice(0, 4).map((t) => t.name) });
+    clips.push(clip);
+  }
+  root.animations = [];
+  return { info, glb: await exportGLB(root, clips) };
+};
+window.ready = true;
+</script>

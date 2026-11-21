@@ -22,7 +22,7 @@
   {
     "name": "Rosa learns the player name",
     "ok": true,
-    "detail": "Colson, huh? Welcome to Palmetto Heights. I'm Rosa."
+    "detail": "Nice to meet you, Colson! I'm Rosa."
   },
   {
     "name": "Rosa offers a job via offer_job action",
@@ -37,12 +37,12 @@
   {
     "name": "Dev follows his schedule (lunch at the plaza, visible)",
     "ok": true,
-    "detail": "Dev at 113,104,false"
+    "detail": "Dev at 111,103,false"
   },
   {
     "name": "Delivery quick action appears for the recipient",
     "ok": true,
-    "detail": "Hand over Box of pastries with Dev Patel open=true inv={\"pastry_box\":1} jobs=[{\"id\":\"job1\",\"templateId\":\"rosa_pastries\",\"giver\":\"rosa\",\"title\":\"Pastry run\",\"description\":\"Deliver a box of pastries to Dev Patel (software engineer at Tidewater Labs).\",\"kind\":\"deliver_item\",\"item\":\"pastry_box\",\"deliverTo\":\"dev\",\"pay\":45,\"status\":\"active\",\"stage\":0,\"acceptedAt\":542.7841666666657}]"
+    "detail": "Hand over Box of pastries with Dev Patel open=true inv={\"pastry_box\":1} jobs=[{\"id\":\"job1\",\"templateId\":\"rosa_pastries\",\"giver\":\"rosa\",\"title\":\"Pastry run\",\"description\":\"Deliver a box of pastries to Dev Patel (software engineer at Tidewater Labs).\",\"kind\":\"deliver_item\",\"item\":\"pastry_box\",\"deliverTo\":\"dev\",\"pay\":45,\"status\":\"active\",\"stage\":0,\"acceptedAt\":542.7616666666661}]"
   },
   {
     "name": "Job completes: paid + persistent consequence on Rosa",
@@ -97,7 +97,7 @@
   {
     "name": "Save/load restores money, memories and relationships",
     "ok": true,
-    "detail": "{\"money\":295,\"rosaRel\":12,\"mem\":7,\"name\":\"Colson\",\"jobs\":1}"
+    "detail": "{\"money\":295,\"rosaRel\":11,\"mem\":8,\"name\":\"Colson\",\"jobs\":1}"
   },
   {
     "name": "No uncaught runtime errors",
@@ -107,6 +107,6 @@
   {
     "name": "fps_swiftshader",
     "ok": true,
-    "detail": "2.1"
+    "detail": "1.3"
   }
 ]

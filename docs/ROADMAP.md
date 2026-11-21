@@ -18,7 +18,11 @@
 - [ ] NPCs proactively text the player (job offers, party invites) via a phone UI
 - [ ] More jobs generated from NPC goals instead of templates
 - [ ] Traffic lights and smarter intersection right-of-way
-- [ ] Skinned/animated character models (glTF) and a Three.js/Babylon render backend behind the same `Renderer` interface
+- [x] three.js renderer with PBR, IBL, bloom, reflective ocean
+- [x] Skinned, motion-captured human characters (Rocketbox)
+- [ ] Ambient occlusion, cascaded shadows, wet-road reflections
+- [ ] Open-licensed vehicle and building models (glTF) to replace generated ones
+- [ ] Facial animation / lip-sync for dialogue (Rocketbox facial rigs)
 - [ ] Rapier physics for vehicles and ragdolls
 - [ ] Coarse 1 Hz simulation tier + spatial hashing for thousands of off-screen NPCs
 - [ ] Bigger map streamed in chunks

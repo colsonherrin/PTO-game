@@ -54,19 +54,19 @@ export class City {
     const R = rng(1337);
 
     // --- base ground (roads are asphalt everywhere, blocks raised on top)
-    ground.plane(-60, -60, BEACH_X0, CITY + 60, 0, C('#3b3f48'), MAT.ASPHALT);
+    ground.plane(-60, -60, BEACH_X0, CITY + 60, 0, C('#6e7178'), MAT.ASPHALT);
     // outskirts grass
     ground.plane(-60, -60, BEACH_X0, -6, 0.02, C('#7fb069'), MAT.GRASS);
     ground.plane(-60, CITY + 6, BEACH_X0, CITY + 60, 0.02, C('#7fb069'), MAT.GRASS);
     ground.plane(-60, -6, -6, CITY + 6, 0.02, C('#7fb069'), MAT.GRASS);
     // beach + ocean
-    ground.plane(BEACH_X0, -60, OCEAN_X + 6, CITY + 60, 0.08, C('#f1dcae'), MAT.SAND);
-    ground.plane(OCEAN_X, -400, 900, 700, 0.0, C('#2a8fb0'), MAT.WATER);
+    ground.plane(BEACH_X0, -60, OCEAN_X + 6, CITY + 60, 0.08, C('#e3cf9f'), MAT.SAND);
+    ground.plane(OCEAN_X, -400, 900, 700, 0.0, C('#2a8fb0'), MAT.OCEAN);
     // boardwalk
-    ground.box(BEACH_X0 + 4, 0.08, CITY / 2, 4, 0.2, CITY + 40, C('#b08a5e'), MAT.PLAIN);
+    ground.box(BEACH_X0 + 4, 0.08, CITY / 2, 4, 0.2, CITY + 40, C('#b08a5e'), MAT.WOOD);
 
     // edge sidewalks around the outer roads
-    const edgeWalk = (x0: number, z0: number, x1: number, z1: number) => ground.box((x0 + x1) / 2, 0, (z0 + z1) / 2, x1 - x0, CURB, z1 - z0, C('#cfc9bd'), MAT.PLAIN, 0, { noBottom: true });
+    const edgeWalk = (x0: number, z0: number, x1: number, z1: number) => ground.box((x0 + x1) / 2, 0, (z0 + z1) / 2, x1 - x0, CURB, z1 - z0, C('#cfc9bd'), MAT.PAVE, 0, { noBottom: true });
     edgeWalk(-6, -6, CITY + 6, 0); edgeWalk(-6, CITY, CITY + 6, CITY + 6); edgeWalk(-6, 0, 0, CITY);
 
     // world bounds
@@ -75,10 +75,19 @@ export class City {
     this.addCollider(-12, CITY + 7, OCEAN_X + 20, CITY + 12, 0, 6, 'bound');
     this.addCollider(OCEAN_X + 4, -12, OCEAN_X + 10, CITY + 12, 0, 6, 'bound');
     // hedge rows on the edges
-    for (let t = -4; t < CITY + 4; t += 3) {
-      props.box(t, 0, -8.5, 3, 1.4, 2.5, C('#4f8a4b'), MAT.GRASS);
-      props.box(t, 0, CITY + 8.5, 3, 1.4, 2.5, C('#4f8a4b'), MAT.GRASS);
-      props.box(-8.5, 0, t, 2.5, 1.4, 3, C('#4f8a4b'), MAT.GRASS);
+    for (let t = -4; t < CITY + 4; t += 2.6) {
+      const hc = C(['#3f7a3e', '#4a8a47', '#356e38'][Math.floor(R() * 3)]);
+      props.blob(t, 0.8, -8.5, 1.9, 1.3 + R() * 0.5, 1.6, hc, MAT.FOLIAGE, t);
+      props.blob(t, 0.8, CITY + 8.5, 1.9, 1.3 + R() * 0.5, 1.6, hc, MAT.FOLIAGE, t + 7);
+      props.blob(-8.5, 0.8, t, 1.6, 1.3 + R() * 0.5, 1.9, hc, MAT.FOLIAGE, t + 13);
+    }
+    // a row of taller trees behind the hedges to close off the horizon
+    for (let t = -30; t < CITY + 30; t += 13) {
+      for (const [tx, tz] of [[t, -22 - R() * 14], [t, CITY + 22 + R() * 14], [-22 - R() * 14, t]] as [number, number][]) {
+        const th = 4 + R() * 3, tr = 3.5 + R() * 2.5;
+        props.cylinder(tx, 0, tz, 0.35, th, C('#5d4632'), MAT.BARK, 7, 0.25);
+        props.blob(tx, th + tr * 0.55, tz, tr, tr * 0.9, tr, C(['#3e7d42', '#4c9150', '#33703a'][Math.floor(R() * 3)]), MAT.FOLIAGE, tx + tz);
+      }
     }
 
     // --- road markings
@@ -109,7 +118,7 @@ export class City {
       for (let bx = 0; bx < NB; bx++) {
         const ox = blockOrigin(bx), oz = blockOrigin(bz);
         // raised sidewalk slab across the whole block
-        ground.box(ox + BLOCK / 2, 0, oz + BLOCK / 2, BLOCK, CURB, BLOCK, C('#d8d2c4'), MAT.PLAIN, 0, { noBottom: true });
+        ground.box(ox + BLOCK / 2, 0, oz + BLOCK / 2, BLOCK, CURB, BLOCK, C('#d8d2c4'), MAT.PAVE, 0, { noBottom: true });
         // curb edge strip
         this.buildBlock(bx, bz, ox, oz, ground, bld, props, R);
         // street lamps + palms along the sidewalk
@@ -183,7 +192,7 @@ export class City {
       L(4.5, 4.5, 22, 51.5, 16 + R() * 6, col1);
       L(30, 4.5, 51.5, 22, 13 + R() * 6, col2);
       // pool courtyard
-      g.box(ox + 40, CURB, oz + 38, 14, 0.05, 16, C('#e9e2d0'), MAT.PLAIN, 0, { noBottom: true });
+      g.box(ox + 40, CURB, oz + 38, 14, 0.05, 16, C('#e9e2d0'), MAT.PAVE, 0, { noBottom: true });
       g.plane(ox + 35, oz + 32, ox + 45, oz + 44, CURB + 0.07, C('#4fc3d9'), MAT.WATER);
       this.palm(p, ox + 31, oz + 30, R); this.palm(p, ox + 49, oz + 47, R);
     };
@@ -217,7 +226,7 @@ export class City {
         break;
       case '1,1': {
         // central plaza
-        g.box(ox + BLOCK / 2, CURB, oz + BLOCK / 2, BLOCK - 7, 0.04, BLOCK - 7, C('#e7dcc7'), MAT.PLAIN, 0, { noBottom: true });
+        g.box(ox + BLOCK / 2, CURB, oz + BLOCK / 2, BLOCK - 7, 0.04, BLOCK - 7, C('#e7dcc7'), MAT.PAVE, 0, { noBottom: true });
         for (let k = 0; k < 6; k++) g.plane(ox + 4 + k * 8.2, oz + 4, ox + 4.4 + k * 8.2, oz + 52, CURB + 0.05, C('#d3c4a8'));
         // fountain
         const fx = ox + 28, fz = oz + 28;
@@ -360,7 +369,8 @@ export class City {
   }
 
   private lamp(p: MeshBuilder, x: number, z: number) {
-    p.cylinder(x, CURB, z, 0.09, 5.2, C('#2b2f36'), 0, 6);
+    p.cylinder(x, CURB, z, 0.11, 5.2, C('#2b2f36'), 0, 8, 0.07);
+    p.cylinder(x, CURB, z, 0.2, 0.5, C('#2b2f36'), 0, 8, 0.12);
     p.box(x, CURB + 5.0, z, 0.7, 0.18, 0.7, C('#2b2f36'));
     p.box(x, CURB + 4.82, z, 0.5, 0.18, 0.5, C('#ffd9a0'), MAT.LAMP);
     this.lamps.push([x, CURB + 4.6, z]);
@@ -374,33 +384,35 @@ export class City {
     const segs = 6;
     for (let k = 0; k < segs; k++) {
       const y = CURB + (k * h) / segs;
-      p.cylinder(cx, y, cz, 0.24 - k * 0.015, h / segs + 0.05, C(k % 2 ? '#8d6e4f' : '#7b5e43'), 0, 6, 0.22 - k * 0.015);
+      p.cylinder(cx, y, cz, 0.24 - k * 0.015, h / segs + 0.05, C(k % 2 ? '#8d6e4f' : '#7b5e43'), MAT.BARK, 8, 0.22 - k * 0.015);
       cx += lean * 0.12; cz += lean * 0.08;
     }
     const topY = CURB + h;
     const greens = ['#3f9a52', '#4cae5d', '#2f8a46'];
-    for (let k = 0; k < 9; k++) {
-      const a = (k / 9) * Math.PI * 2 + R() * 0.3;
-      p.leaf(cx, topY, cz, Math.cos(a), Math.sin(a), 3.2 + R() * 0.8, 0.55, 1.4 + R() * 0.6, C(greens[k % 3]));
+    for (let k = 0; k < 14; k++) {
+      const a = (k / 14) * Math.PI * 2 + R() * 0.3;
+      const up = k % 2 ? 0.2 : 1;
+      p.leaf(cx, topY, cz, Math.cos(a), Math.sin(a), 3.4 + R() * 1.0, 0.5, (1.0 + R() * 0.8) * (2 - up), C(greens[k % 3]));
     }
-    p.box(cx, topY - 0.3, cz, 0.6, 0.6, 0.6, C('#6b4f2a'));
+    p.blob(cx, topY - 0.15, cz, 0.42, 0.45, 0.42, C('#6b4f2a'), MAT.BARK, cx);
     this.addCollider(x - 0.3, z - 0.3, x + 0.3, z + 0.3, 0, h, 'tree');
   }
 
   private tree(p: MeshBuilder, x: number, z: number, R: () => number) {
     const h = 2.4 + R() * 1.2;
-    p.cylinder(x, CURB, z, 0.25, h, C('#7b5e43'), 0, 6);
-    const g = C(['#4f9d5a', '#5aab63', '#3e8b4f'][Math.floor(R() * 3)]);
-    const s = 2.4 + R() * 1.2;
-    p.cylinder(x, CURB + h - 0.3, z, s * 0.9, s * 0.9, g, 0, 7, s * 0.6);
-    p.cylinder(x, CURB + h + s * 0.6 - 0.3, z, s * 0.6, s * 0.7, g.map((c) => c * 1.1) as Vec3, 0, 7, 0.2);
+    p.cylinder(x, CURB, z, 0.28, h + 0.6, C('#6a503a'), MAT.BARK, 8, 0.16);
+    const g = C(['#3f8a49', '#4a9a53', '#357c41'][Math.floor(R() * 3)]);
+    const s = 2.1 + R() * 1.0;
+    p.blob(x, CURB + h + s * 0.55, z, s, s * 0.85, s, g, MAT.FOLIAGE, x * 3 + z);
+    p.blob(x + s * 0.5, CURB + h + s * 0.3, z + s * 0.3, s * 0.6, s * 0.55, s * 0.6, g.map((c) => c * 0.92) as Vec3, MAT.FOLIAGE, x + z * 5);
+    p.blob(x - s * 0.45, CURB + h + s * 0.45, z - s * 0.35, s * 0.65, s * 0.55, s * 0.65, g.map((c) => c * 1.08) as Vec3, MAT.FOLIAGE, x * 7 + z);
     this.addCollider(x - 0.35, z - 0.35, x + 0.35, z + 0.35, 0, h + 2, 'tree');
   }
 
   private bench(p: MeshBuilder, x: number, z: number, yaw: number) {
-    p.box(x, CURB + 0.42, z, 2.2, 0.1, 0.6, C('#9c6b43'), 0, yaw);
+    p.box(x, CURB + 0.42, z, 2.2, 0.1, 0.6, C('#9c6b43'), MAT.WOOD, yaw);
     const bx = Math.sin(yaw) * 0.28, bz = Math.cos(yaw) * 0.28;
-    p.box(x + bx, CURB + 0.5, z + bz, 2.2, 0.5, 0.08, C('#9c6b43'), 0, yaw);
+    p.box(x + bx, CURB + 0.5, z + bz, 2.2, 0.5, 0.08, C('#9c6b43'), MAT.WOOD, yaw);
     p.box(x, CURB, z, 2.0, 0.42, 0.4, C('#3a3f47'), 0, yaw);
     const ex = Math.abs(Math.cos(yaw)) * 1.1 + 0.3, ez = Math.abs(Math.sin(yaw)) * 1.1 + 0.3;
     this.addCollider(x - ex, z - ez, x + ex, z + ez, 0, 0.9, 'bench');

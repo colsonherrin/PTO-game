@@ -6,11 +6,11 @@ You've got paid time off. The city is yours. Palmetto Heights is a sunny coastal
 
 Walk up to anyone, press **E**, and type. Ask Rosa for work and she'll hand you a box of pastries to deliver. Ask Dev for a ride and he'll walk to his car, wait for you to hop in, and drive you across town. Haggle with Marco for a car. Run someone over and the witnesses will remember — and tell their friends.
 
-![Dialogue and job offer](screenshots/03-dialogue-job-offer.png)
+![Talking to Rosa](screenshots/01-dialogue.png)
 
-| Riding with Dev | Driving | Night |
-|---|---|---|
-| ![ride](screenshots/05-ride.png) | ![drive](screenshots/07-driving.png) | ![night](screenshots/09-night.png) |
+| Street | Beach | Sunset | Night |
+|---|---|---|---|
+| ![street](screenshots/02-street.png) | ![beach](screenshots/03-beach.png) | ![sunset](screenshots/04-sunset.png) | ![night](screenshots/05-night.png) |
 
 ## Play
 
@@ -27,7 +27,7 @@ It runs out of the box **without an API key** using a clearly-labeled *simulated
 - **Server key (recommended):** `cp .env.example .env`, put your `OPENROUTER_API_KEY` in it, then `npm start`. The key stays on the server; the game auto-detects it.
 - **Browser key:** press **Esc → AI conversations**, paste an OpenRouter key, click *Apply*. It's stored only in your browser's localStorage and sent directly to OpenRouter.
 
-`dist/index.html` is a single self-contained file (≈190 KB, zero runtime dependencies) — you can also open it directly or host it anywhere static.
+`dist/` is a static site (`index.html` ≈ 0.8 MB with the engine bundled, plus ≈ 22 MB of character models in `dist/assets/`) — host it anywhere static. It's live at https://colsonherrin.github.io/PTO-game/.
 
 ### Controls
 
@@ -45,7 +45,8 @@ It runs out of the box **without an API key** using a clearly-labeled *simulated
 
 ## What's in the MVP
 
-- **3D city:** a 4×4-block neighborhood plus beach and ocean, ~30 buildings with procedural window facades, palms, street lamps, crosswalks, a fountain plaza, a park with a pond, a taco truck, a car lot. Day/night cycle with a moving sun, real-time shadow mapping, lit windows and street lamps at night, stars and a moon.
+- **3D city:** a 4×4-block neighborhood plus beach and ocean, rendered with three.js: physically based materials, image-based lighting from the sky, soft shadows, a reflective animated ocean, drifting clouds, bloom and filmic tone mapping. Buildings have textured facades and storefronts with glass reflections and lit windows at night.
+- **Characters:** 23 realistic, skinned human models with motion-captured idle, walk, run, talk and wave animations (Microsoft Rocketbox, MIT).
 - **Player:** third-person controller with walk/run/jump animations, collision, stamina, health, money, inventory, camera collision.
 - **Vehicles:** arcade driving physics, 13 traffic cars following lanes and yielding to pedestrians, parked cars, carjacking, crashes.
 - **16 named NPCs + 22 ambient residents**, each with name, age, occupation, personality, speaking style, background, goals, relationships, daily schedule, inventory, knowledge, mood and opinion of you. Ambient residents get procedurally generated identities so you really can talk to anyone.
@@ -76,7 +77,7 @@ These numbers are **projected** from measured prompt sizes × OpenRouter's Nov-2
 ```bash
 npm run typecheck   # strict TypeScript
 npm test            # 22 unit tests: action validation, inference router, simulated brain, world/nav, memory
-npm run test:e2e    # 22 gameplay checks in headless Chrome + screenshots
+npm run test:e2e    # 22 gameplay checks in headless Chrome + screenshots (slow without a GPU)
 npm run measure     # AI cost measurement
 ```
 
@@ -86,6 +87,19 @@ npm run measure     # AI cost measurement
 - [Roadmap](docs/ROADMAP.md)
 - [AI costs](docs/COSTS.md)
 
-## License
+## Graphics settings
 
-MIT — see [LICENSE](LICENSE). All art, geometry and audio are generated in code; there are no third-party assets.
+**Esc → Graphics quality**: High (4K shadows, MSAA, bloom), Medium, or Low (no post-processing) for older machines. Resolution scale and shadows can be turned down separately.
+
+## Credits and licenses
+
+PTO's own code is MIT — see [LICENSE](LICENSE). Third-party open-source pieces:
+
+| What | Source | License |
+|---|---|---|
+| 3D engine | [three.js](https://github.com/mrdoob/three.js) r170 | MIT |
+| Character models and motion capture | [Microsoft Rocketbox Avatar Library](https://github.com/microsoft/Microsoft-Rocketbox) | MIT |
+| Grass texture | OpenGameArt "dark grass", via the three.js examples | CC-BY 3.0 |
+| Water normal map | three.js examples | MIT repository |
+
+Buildings, roads, vehicles, the other textures and all audio are generated in code. `npm run assets -- <vendor-dir>` re-creates `public/assets` from the upstream Rocketbox FBX files (see `scripts/assets/convert.mjs`).
