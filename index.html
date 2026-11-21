@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PTO — Paid Time Off</title>
+<style>
+:root{--ink:#14161f;--glass:rgba(16,19,30,.72);--glass2:rgba(255,255,255,.08);--line:rgba(255,255,255,.12);--txt:#f6f3ec;--dim:#a7adbd;--sun:#ffd166;--coral:#ff6b6b;--teal:#2ec4b6;--good:#3ddc97;--bad:#ff5d73;--font:ui-rounded,"SF Pro Rounded","Nunito","Segoe UI",system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#0d1020;color:var(--txt);font-family:var(--font);-webkit-font-smoothing:antialiased}
+canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+button{font-family:inherit;cursor:pointer}
+#ui{position:fixed;inset:0;pointer-events:none}
+#ui>*{pointer-events:auto}
+body.title-mode #ui{display:none}
+.glass{background:var(--glass);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+/* HUD */
+#hud-tl{position:absolute;left:18px;top:16px;padding:12px 16px;min-width:230px;pointer-events:none}
+#hud-clock{font-size:13px;color:var(--dim);letter-spacing:.02em}
+#hud-money{font-size:28px;font-weight:800;color:var(--good);letter-spacing:-.02em;line-height:1.15}
+#hud-location{font-size:13px;color:var(--sun);margin-top:2px}
+.bars{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.bar{height:6px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:9px;transition:width .2s}
+#hud-health{background:linear-gradient(90deg,#ff5d73,#ff8fa0)}
+#hud-stamina{background:linear-gradient(90deg,#2ec4b6,#7ae3d6)}
+#hud-heat{font-size:18px;color:var(--sun);letter-spacing:2px;margin-top:6px;text-shadow:0 0 8px rgba(255,209,102,.6)}
+#hud-heat .dim{color:rgba(255,255,255,.18);text-shadow:none}
+#hud-objective{position:absolute;left:18px;top:178px;max-width:330px;padding:10px 14px;font-size:14px;line-height:1.35;pointer-events:none}
+#hud-objective b{color:var(--sun)}
+#hud-tr{position:absolute;right:18px;top:16px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#minimap{width:200px;height:200px;border-radius:50%;border:3px solid rgba(255,255,255,.85);box-shadow:0 8px 30px rgba(0,0,0,.35);display:block;background:#2a2f3a}
+#hud-ai{font-size:12px;pointer-events:none;background:rgba(16,19,30,.75);border-radius:999px}
+#hud-cost{font-size:11px;color:var(--dim);pointer-events:none}
+#hud-speed{position:absolute;right:28px;bottom:28px;font-size:46px;font-weight:800;padding:8px 18px;pointer-events:none}
+#hud-speed small{font-size:15px;color:var(--dim);font-weight:600}
+#hud-keys{position:absolute;left:18px;bottom:16px;font-size:12px;color:var(--dim);padding:8px 12px;pointer-events:none;line-height:1.6}
+kbd{display:inline-block;min-width:20px;text-align:center;padding:1px 6px;border-radius:6px;background:rgba(255,255,255,.14);color:#fff;font-family:inherit;font-size:11px;border-bottom:2px solid rgba(0,0,0,.35)}
+#prompt{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);padding:10px 18px;font-size:15px;pointer-events:none;white-space:nowrap}
+#prompt small{color:var(--dim)}
+.badge-live{background:rgba(61,220,151,.18);border:1px solid rgba(61,220,151,.5);color:#bff5dc}
+.badge-sim{background:rgba(255,209,102,.16);border:1px solid rgba(255,209,102,.45);color:#ffe7ae}
+/* bubbles */
+#bubbles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.bubble{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:center;gap:3px;will-change:transform}
+.bubble .say{background:#fff;color:#1b1f2a;padding:6px 11px;border-radius:14px;font-size:13px;font-weight:600;max-width:240px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.25);position:relative}
+.bubble .say:after{content:"";position:absolute;bottom:-6px;left:50%;margin-left:-6px;border:6px solid transparent;border-top-color:#fff;border-bottom:0}
+.bubble .tag{font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap}
+/* toasts */
+#toasts{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.toast{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(10px);padding:9px 16px;border-radius:12px;font-size:14px;animation:tin .25s ease;transition:opacity .4s,transform .4s;max-width:560px;text-align:center}
+.toast.good{border-color:rgba(61,220,151,.6)}.toast.bad{border-color:rgba(255,93,115,.7)}.toast.ai{border-color:rgba(46,196,182,.6)}
+.toast.out{opacity:0;transform:translateY(-8px)}
+@keyframes tin{from{opacity:0;transform:translateY(-10px)}}
+#big{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .5s}
+#big.show{opacity:1}
+.big-title{font-size:64px;font-weight:900;letter-spacing:-.03em;background:linear-gradient(90deg,var(--sun),var(--coral));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 4px 20px rgba(0,0,0,.4))}
+.big-sub{font-size:18px;color:#fff;margin-top:6px;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+/* dialogue */
+#dialogue{position:absolute;right:18px;top:240px;bottom:18px;width:420px;display:flex;flex-direction:column;transform:translateX(460px);transition:transform .28s cubic-bezier(.2,.9,.3,1.2);padding:0;overflow:hidden}
+#dialogue.open{transform:none}
+@media (max-height:860px){#dialogue{top:16px;z-index:3}}
+@media (max-width:900px){#dialogue{width:min(420px,calc(100vw - 36px))}}
+.dlg-head{display:flex;gap:12px;padding:14px 16px 10px;border-bottom:1px solid var(--line);align-items:center}
+#dlg-avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:18px;color:#fff;flex:none;box-shadow:inset 0 -3px 0 rgba(0,0,0,.2)}
+#dlg-name{font-weight:800;font-size:17px}
+#dlg-occ{font-size:12px;color:var(--dim)}
+#dlg-status{font-size:11px;color:var(--sun);margin-top:2px}
+#dlg-close{margin-left:auto;align-self:flex-start;background:none;border:0;color:var(--dim);font-size:20px}
+.dlg-meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--dim);padding:8px 16px 4px;gap:8px}
+.rel{position:relative;height:5px;border-radius:9px;background:rgba(255,255,255,.12);margin:0 16px 6px}
+.rel:before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:rgba(255,255,255,.4)}
+#dlg-rel-bar{position:absolute;top:0;height:100%;border-radius:9px;transition:all .4s}
+#dlg-log{flex:1;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin}
+.msg{display:flex;flex-direction:column;max-width:88%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.38;animation:tin .2s}
+.msg b{font-size:11px;color:var(--dim);font-weight:700;margin-bottom:2px}
+.msg i{font-size:10px;color:var(--dim);font-style:normal;margin-top:4px;opacity:.8}
+.msg.npc{background:var(--glass2);align-self:flex-start;border-bottom-left-radius:4px}
+.msg.player{background:linear-gradient(135deg,#ff8a5b,#ff6b6b);align-self:flex-end;border-bottom-right-radius:4px}
+.msg.player b{color:rgba(255,255,255,.8)}
+.msg.system{align-self:center;background:none;color:var(--sun);font-size:12px;text-align:center;max-width:100%;padding:2px}
+.sep{text-align:center;font-size:10px;color:var(--dim);opacity:.6}
+#dlg-thinking{padding:0 16px 6px;font-size:12px;color:var(--dim)}
+#dlg-thinking span{display:inline-block;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+#dlg-offers{padding:0 12px;display:flex;flex-direction:column;gap:8px}
+.offer{background:rgba(255,209,102,.1);border:1px solid rgba(255,209,102,.45);border-radius:12px;padding:10px 12px}
+.offer-title{font-weight:800;font-size:14px;color:var(--sun)}
+.offer-detail{font-size:13px;margin:3px 0 8px;color:#e9e6de}
+.offer-row{display:flex;gap:8px}
+#dlg-quick,#dlg-suggest{display:flex;flex-wrap:wrap;gap:6px;padding:6px 12px 0}
+.chip{background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--txt);padding:5px 10px;border-radius:999px;font-size:12px}
+.chip:hover{background:rgba(255,255,255,.16)}
+.qa{background:rgba(255,255,255,.1);border:1px solid var(--line);color:var(--txt);padding:7px 12px;border-radius:10px;font-size:13px;font-weight:700}
+.qa.primary{background:linear-gradient(135deg,#ffd166,#ffb347);color:#2a1c00;border:0}
+#dlg-form{display:flex;gap:8px;padding:10px 12px 12px}
+#dlg-input{flex:1;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:12px;padding:11px 13px;color:var(--txt);font-family:inherit;font-size:14px;outline:none}
+#dlg-input:focus{border-color:rgba(255,209,102,.6)}
+.iconbtn{background:rgba(255,255,255,.1);border:1px solid var(--line);color:var(--txt);border-radius:12px;width:44px;font-size:17px}
+#dlg-mic.on{background:var(--coral)}
+#dlg-ai{font-size:10px;padding:3px 8px;border-radius:999px}
+/* panels */
+.panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-48%) scale(.98);width:min(760px,92vw);max-height:84vh;overflow:auto;padding:24px 28px;opacity:0;pointer-events:none;transition:all .2s}
+.panel.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+.panel h2{margin:0 0 4px;font-size:28px;letter-spacing:-.02em}
+.panel h3{margin:18px 0 8px;font-size:15px;color:var(--sun);text-transform:uppercase;letter-spacing:.08em}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.row label{font-size:13px;color:var(--dim);min-width:150px}
+.row input[type=text],.row input[type=password],.row input[type=number],.row select{flex:1;min-width:200px;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:10px;padding:8px 10px;color:var(--txt);font-family:inherit}
+.btn{background:rgba(255,255,255,.1);border:1px solid var(--line);color:var(--txt);padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px}
+.btn.primary{background:linear-gradient(135deg,#ffd166,#ff8a5b);color:#2a1300;border:0}
+.small{font-size:12px;color:var(--dim);line-height:1.5}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t td,table.t th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+table.t th{color:var(--dim);font-weight:600}
+.person{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.person .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;background:rgba(255,255,255,.1)}
+/* title */
+#title{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 120%,rgba(255,138,91,.55),transparent 60%),linear-gradient(180deg,rgba(18,22,48,.55),rgba(18,22,48,.15) 60%,rgba(255,170,110,.25));z-index:5}
+.logo{font-size:min(26vw,220px);font-weight:900;letter-spacing:-.06em;line-height:.85;background:linear-gradient(180deg,#fff7d6 10%,#ffd166 45%,#ff8a5b 75%,#ff5d73);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 10px 40px rgba(255,107,107,.45))}
+.tagline{font-size:22px;font-weight:700;letter-spacing:.35em;text-transform:uppercase;margin-top:6px;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.premise{max-width:520px;text-align:center;color:#f1ece2;margin:18px 0 26px;font-size:16px;line-height:1.5;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.title-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.title-btns .btn{font-size:17px;padding:14px 26px;border-radius:16px}
+.title-foot{position:absolute;bottom:18px;font-size:12px;color:rgba(255,255,255,.75);text-align:center;line-height:1.7;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0d1020;z-index:9;font-size:18px;color:var(--dim)}
+#fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .6s;z-index:4}
+#fade.on{opacity:1}
+#crosshint{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:rgba(255,255,255,.5);pointer-events:none;display:none}
+#err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#0d1020;color:#fff;z-index:10;padding:40px;text-align:center}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="bubbles"></div>
+  <div id="hud-tl" class="glass">
+    <div id="hud-clock">Mon · Day 1 · 9:00 AM</div>
+    <div id="hud-money">$250</div>
+    <div id="hud-location">Palmetto Heights</div>
+    <div class="bars"><div class="bar"><i id="hud-health" style="width:100%"></i></div><div class="bar"><i id="hud-stamina" style="width:100%"></i></div></div>
+    <div id="hud-heat"></div>
+  </div>
+  <div id="hud-objective" class="glass"></div>
+  <div id="hud-tr"><canvas id="minimap" width="200" height="200"></canvas><div id="hud-ai"></div><div id="hud-cost"></div></div>
+  <div id="hud-speed" class="glass" style="display:none"></div>
+  <div id="hud-keys" class="glass"><kbd>WASD</kbd> move · <kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump · <kbd>E</kbd> talk/interact · <kbd>F</kbd> car · <kbd>J</kbd> journal · <kbd>Esc</kbd> menu · click to look</div>
+  <div id="prompt" class="glass" style="display:none"></div>
+  <div id="toasts"></div>
+  <div id="big"></div>
+  <div id="crosshint"></div>
+
+  <div id="dialogue" class="glass">
+    <div class="dlg-head">
+      <div id="dlg-avatar">RD</div>
+      <div><div id="dlg-name">Name</div><div id="dlg-occ">Occupation</div><div id="dlg-status"></div></div>
+      <button id="dlg-close" title="Leave (Esc)">✕</button>
+    </div>
+    <div class="dlg-meta"><span id="dlg-mood">🙂 content</span><span id="dlg-known"></span><span id="dlg-ai" class="badge-sim">simulated</span></div>
+    <div class="rel"><i id="dlg-rel-bar"></i></div>
+    <div class="dlg-meta" style="padding-top:0"><span id="dlg-rel-label">Relationship 0</span></div>
+    <div id="dlg-log"></div>
+    <div id="dlg-thinking" style="display:none"><span>●</span> <span style="animation-delay:.2s">●</span> <span style="animation-delay:.4s">●</span> thinking</div>
+    <div id="dlg-offers"></div>
+    <div id="dlg-quick"></div>
+    <div id="dlg-suggest"></div>
+    <form id="dlg-form" autocomplete="off"><input id="dlg-input" placeholder="Say something… (Enter to send, Esc to leave)" maxlength="400" /><button type="button" id="dlg-mic" class="iconbtn" title="Voice input">🎙</button><button class="iconbtn" title="Send">➤</button></form>
+  </div>
+
+  <div id="journal" class="panel glass"><h2>Journal</h2><div id="journal-body"></div><div class="row" style="margin-top:16px"><button class="btn" id="journal-close">Close (J)</button></div></div>
+
+  <div id="pause" class="panel glass">
+    <h2>Paused</h2>
+    <div class="small">Your vacation is on hold. Settings are saved in this browser.</div>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="btn-resume">Resume</button><button class="btn" id="btn-save">Save game</button><button class="btn" id="btn-load">Load game</button><button class="btn" id="btn-quit">Title screen</button></div>
+    <h3>AI conversations</h3>
+    <div class="row"><label>Provider</label><select id="set-provider"><option value="auto">Auto (server key → browser key → simulated)</option><option value="openrouter">OpenRouter (browser key)</option><option value="server">PTO server (OPENROUTER_API_KEY)</option><option value="sim">Simulated only (free, offline)</option></select></div>
+    <div class="row"><label>OpenRouter API key</label><input type="password" id="set-key" placeholder="sk-or-… (stored only in this browser)" /></div>
+    <div class="row"><label>Tier 1 model (cheap)</label><input type="text" id="set-t1" /></div>
+    <div class="row"><label>Tier 2 model (advanced)</label><input type="text" id="set-t2" /></div>
+    <div class="row"><label>Session budget (USD)</label><input type="number" id="set-budget" step="0.05" min="0" /></div>
+    <div class="row"><label>Max requests / minute</label><input type="number" id="set-rpm" min="1" max="120" /></div>
+    <div class="row"><label>Speak NPC replies (TTS)</label><input type="checkbox" id="set-tts" /></div>
+    <div class="row"><button class="btn" id="btn-apply-ai">Apply AI settings</button><span class="small" id="ai-status"></span></div>
+    <h3>Graphics &amp; audio</h3>
+    <div class="row"><label>Shadows</label><input type="checkbox" id="set-shadows" checked /></div>
+    <div class="row"><label>Resolution scale</label><select id="set-res"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1" selected>100%</option></select></div>
+    <div class="row"><label>Volume</label><input type="range" id="set-vol" min="0" max="1" step="0.05" /></div>
+    <div class="row"><label>Mouse sensitivity</label><input type="range" id="set-sens" min="0.3" max="2.5" step="0.1" /></div>
+    <div class="row"><label>Time speed</label><select id="set-timescale"><option value="0.5">Relaxed (1 day = 48 min)</option><option value="1" selected>Normal (1 day = 24 min)</option><option value="3">Fast (1 day = 8 min)</option></select></div>
+    <h3>Measured AI cost</h3>
+    <div id="cost-body" class="small"></div>
+    <h3>Credits</h3>
+    <div class="small">PTO is open source (MIT). All geometry, textures, sounds and music are generated procedurally in code — no third-party assets. Built with TypeScript, WebGL2, Web Audio, Web Speech and esbuild. LLMs via OpenRouter.</div>
+  </div>
+</div>
+
+<div id="title">
+  <div class="logo">PTO</div>
+  <div class="tagline">Paid Time Off</div>
+  <div class="premise">You've got paid time off. The city is yours. Everyone in Palmetto Heights has a life, a schedule and a memory — and every one of them will talk to you.</div>
+  <div class="title-btns"><button class="btn primary" id="btn-new">Start vacation</button><button class="btn" id="btn-continue">Continue</button><button class="btn" id="btn-title-settings">Settings</button></div>
+  <div class="title-foot">WASD + mouse · E talk · F drive · Works offline with simulated dialogue — add an OpenRouter key in Settings for live AI.</div>
+</div>
+<div id="fade"></div>
+<div id="loading"><span id="loading-text">Loading Palmetto Heights…</span></div>
+<div id="err"></div>
+<script type="module" src="./src/main.ts"></script>
+</body>
+</html>

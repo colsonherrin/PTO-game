@@ -1,0 +1,139 @@
+{
+  "mode": "PROJECTED from measured prompt sizes (no API key in this environment)",
+  "tier1Model": "openai/gpt-oss-20b",
+  "tier2Model": "openai/gpt-oss-120b",
+  "prices": {
+    "openai/gpt-oss-20b": {
+      "input": 0.045,
+      "output": 0.178
+    },
+    "openai/gpt-oss-120b": {
+      "input": 0.096,
+      "output": 0.365
+    }
+  },
+  "interactions": 14,
+  "tier1": 11,
+  "tier2": 3,
+  "avgPromptTokens": 962,
+  "avgCompletionTokens": 59,
+  "assumedReasoningTokensPerReply": 150,
+  "tokenCounting": "chars/3.8 estimate of the exact prompts the game builds",
+  "avgCostPerInteractionUSD": 0.0001004,
+  "totalUSD": 0.001405,
+  "costPer1000Interactions": 0.1004,
+  "lines": [
+    {
+      "npc": "rosa",
+      "tier": 1,
+      "prompt": 1055,
+      "completion": 38,
+      "cost": 0.0000809,
+      "msg": "Hi! I'm Colson, just got into town."
+    },
+    {
+      "npc": "rosa",
+      "tier": 1,
+      "prompt": 1081,
+      "completion": 68,
+      "cost": 0.0000874,
+      "msg": "What do you do around here?"
+    },
+    {
+      "npc": "rosa",
+      "tier": 1,
+      "prompt": 1136,
+      "completion": 76,
+      "cost": 0.0000913,
+      "msg": "Got any work for me?"
+    },
+    {
+      "npc": "rosa",
+      "tier": 1,
+      "prompt": 1177,
+      "completion": 53,
+      "cost": 0.0000891,
+      "msg": "What's new around town?"
+    },
+    {
+      "npc": "dev",
+      "tier": 1,
+      "prompt": 910,
+      "completion": 43,
+      "cost": 0.0000753,
+      "msg": "Hey, are you Dev?"
+    },
+    {
+      "npc": "dev",
+      "tier": 1,
+      "prompt": 951,
+      "completion": 68,
+      "cost": 0.0000816,
+      "msg": "Can you give me a ride to the beach?"
+    },
+    {
+      "npc": "marco",
+      "tier": 2,
+      "prompt": 961,
+      "completion": 79,
+      "cost": 0.0001758,
+      "msg": "I'm looking to buy a car."
+    },
+    {
+      "npc": "marco",
+      "tier": 2,
+      "prompt": 1019,
+      "completion": 74,
+      "cost": 0.0001796,
+      "msg": "I'll give you $1000 for the hatchback."
+    },
+    {
+      "npc": "marco",
+      "tier": 2,
+      "prompt": 1057,
+      "completion": 65,
+      "cost": 0.0001799,
+      "msg": "How about $1150?"
+    },
+    {
+      "npc": "theo",
+      "tier": 1,
+      "prompt": 892,
+      "completion": 45,
+      "cost": 0.0000748,
+      "msg": "Ahoy. Need any help?"
+    },
+    {
+      "npc": "theo",
+      "tier": 1,
+      "prompt": 932,
+      "completion": 59,
+      "cost": 0.0000791,
+      "msg": "Would you book Lena for a gig?"
+    },
+    {
+      "npc": "ped_3",
+      "tier": 1,
+      "prompt": 697,
+      "completion": 43,
+      "cost": 0.0000657,
+      "msg": "Hey, nice day huh?"
+    },
+    {
+      "npc": "ped_3",
+      "tier": 1,
+      "prompt": 730,
+      "completion": 49,
+      "cost": 0.0000683,
+      "msg": "Where can I get food?"
+    },
+    {
+      "npc": "omar",
+      "tier": 1,
+      "prompt": 868,
+      "completion": 59,
+      "cost": 0.0000763,
+      "msg": "What's the news today?"
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+[
+  {
+    "name": "game boots (WebGL2 + world build)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "15+ unique named NPCs",
+    "ok": true,
+    "detail": "16 named + 22 ambient, 28 vehicles"
+  },
+  {
+    "name": "WASD moves the player",
+    "ok": true,
+    "detail": "moved 4.3 m"
+  },
+  {
+    "name": "E opens conversation with Rosa",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Rosa learns the player name",
+    "ok": true,
+    "detail": "Colson, huh? Welcome to Palmetto Heights. I'm Rosa."
+  },
+  {
+    "name": "Rosa offers a job via offer_job action",
+    "ok": true,
+    "detail": "Job: Pastry run — $45"
+  },
+  {
+    "name": "Job accepted, pastry box in inventory",
+    "ok": true,
+    "detail": "{\"jobs\":[\"rosa_pastries:active\"],\"inv\":{\"pastry_box\":1}}"
+  },
+  {
+    "name": "Dev follows his schedule (lunch at the plaza, visible)",
+    "ok": true,
+    "detail": "Dev at 113,104,false"
+  },
+  {
+    "name": "Delivery quick action appears for the recipient",
+    "ok": true,
+    "detail": "Hand over Box of pastries with Dev Patel open=true inv={\"pastry_box\":1} jobs=[{\"id\":\"job1\",\"templateId\":\"rosa_pastries\",\"giver\":\"rosa\",\"title\":\"Pastry run\",\"description\":\"Deliver a box of pastries to Dev Patel (software engineer at Tidewater Labs).\",\"kind\":\"deliver_item\",\"item\":\"pastry_box\",\"deliverTo\":\"dev\",\"pay\":45,\"status\":\"active\",\"stage\":0,\"acceptedAt\":542.7841666666657}]"
+  },
+  {
+    "name": "Job completes: paid + persistent consequence on Rosa",
+    "ok": true,
+    "detail": "{\"money\":295,\"rosaRel\":12,\"rosaMem\":\"Colson finished the \\\"Pastry run\\\" job for me. Reliable — I'd hire them again.\"}"
+  },
+  {
+    "name": "Dev agrees and starts a ride (drive_to action)",
+    "ok": true,
+    "detail": "{\"phase\":\"walk\",\"dest\":\"beach\"}"
+  },
+  {
+    "name": "Dev walks to his car and gets in",
+    "ok": true,
+    "detail": "wait"
+  },
+  {
+    "name": "Player boards as passenger",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Dev drives the player to the beach and drops them off",
+    "ok": true,
+    "detail": "player at 291,137 (Palmetto Beach)"
+  },
+  {
+    "name": "F enters the rental car",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Car accelerates and moves",
+    "ok": true,
+    "detail": "top speed 19.2 m/s, moved 42 m"
+  },
+  {
+    "name": "Marco negotiates (counter-offer above his floor)",
+    "ok": true,
+    "detail": "$900? You're killing me! I can do $1150, final offer. | Price: $1,150 · You have $295"
+  },
+  {
+    "name": "Rosa remembers Colson when he returns",
+    "ok": true,
+    "detail": "Oh, hey Colson."
+  },
+  {
+    "name": "NPCs who were never told the name do not know it",
+    "ok": true,
+    "detail": "null"
+  },
+  {
+    "name": "Save/load restores money, memories and relationships",
+    "ok": true,
+    "detail": "{\"money\":295,\"rosaRel\":12,\"mem\":7,\"name\":\"Colson\",\"jobs\":1}"
+  },
+  {
+    "name": "No uncaught runtime errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "fps_swiftshader",
+    "ok": true,
+    "detail": "2.1"
+  }
+]

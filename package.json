@@ -1,0 +1,25 @@
+{
+  "name": "pto-game",
+  "version": "0.1.0",
+  "description": "Paid Time Off \u2014 An open-world sandbox game where every NPC is a conversational AI agent.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node scripts/build.mjs --watch & node server/server.mjs",
+    "build": "node scripts/build.mjs",
+    "start": "node server/server.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/run-tests.mjs",
+    "test:e2e": "node scripts/e2e.mjs",
+    "measure": "node scripts/measure-costs.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.0",
+    "playwright": "^1.50.0",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
